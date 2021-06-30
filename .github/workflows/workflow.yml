@@ -3,24 +3,45 @@ name: Build and Test
 on:
   push:
     paths: 
-      - 'src/exercise.py' 
-                                                                                
-jobs:  
-  build_and_test:
+      - 'src/my_code.py'
+
+jobs:
+
+  test_with_pytest:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-      
-    - name: Install Dependencies
+    - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
-        
-    - name: Run Tests
-      run: |
-        flake8 src/exercise.py --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 src/exercise.py --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-        python3 -m pytest
+
+    - name: Lint student program
+      id: style
+      continue-on-error: true
+      run: flake8 src/my_code.py >> .github/ISSUE_TEMPLATE/style-issues.md
+
+    - name: Style fail message
+      if: failure()
+      uses: machine-learning-apps/pr-comment@1.0.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        path: .github/ISSUE_TEMPLATE/style-issues.md
+
+    - name: Success message
+      if: steps.style.outcome == 'success'
+      uses: machine-learning-apps/pr-comment@1.0.0
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        path: .github/ISSUE_TEMPLATE/test-success.md
+
+
+
+
+
